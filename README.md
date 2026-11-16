@@ -1,3 +1,3 @@
 # Python_is_wonderful
-- All the programs in here are not mine. I just found it somewhere on the Internet.
+- Some Python programming projects by me and my friends.
 - HAVE FUN!
