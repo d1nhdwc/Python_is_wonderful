@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f7fd">
+  <meta name="description" content="Giao diện theo dõi blockchain, giao dịch và mining của từng node.">
+  <title>Chainroom · Dashboard</title>
+  <link rel="stylesheet" href="static/css/style.css">
+  <script type="module" src="static/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+  <aside class="sidebar" aria-label="Thanh bên">
+    <a class="brand" href="#dashboard"><span class="brand-mark" aria-hidden="true">⬡</span><span>chainroom<span class="brand-caption">BLOCKCHAIN LAB</span></span></a>
+    <div class="workspace-label">Work space</div>
+    <nav aria-label="Điều hướng chính">
+      <a href="#dashboard" data-page="dashboard"><span aria-hidden="true">◫</span>Dashboard</a>
+      <a href="#wallet" data-page="wallet"><span aria-hidden="true">◉</span>Số dư</a>
+      <a href="#blockchain" data-page="blockchain"><span aria-hidden="true">▱</span>Blockchain</a>
+      <a href="#transactions" data-page="transactions"><span aria-hidden="true">↗</span>Transactions</a>
+      <a href="#mempool" data-page="mempool"><span aria-hidden="true">≋</span>Mempool</a>
+      <a href="#mining" data-page="mining"><span aria-hidden="true">◇</span>Mining</a>
+      <a href="#network" data-page="network"><span aria-hidden="true">◎</span>Network</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="eyebrow">PYTHON project</span><p>Nhóm 2 - CTAT01<br>- g3n_71nh_h04 -</p><span class="version">Project nhóm · UI preview 0.1</span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="node-identity"><span class="node-avatar">?</span><div><strong>Đang xác định node</strong><span>Đang tải cấu hình</span></div></div><div class="topbar-actions"><span class="badge">…</span><span class="connection"><i></i>Đang tải…</span><button id="refresh" class="button secondary" type="button">↻ <span>Làm mới</span></button></div></header>
+    <main id="main" tabindex="-1">
+      <div class="preview-notice"><span class="badge">…</span><span>Đang tải cấu hình giao diện…</span></div>
+      <div class="page-heading"><div><div id="page-kicker" class="eyebrow">GIÁM SÁT BLOCKCHAIN</div><h1 id="page-title">Dashboard</h1><p id="page-description">Theo dõi trạng thái node, hoạt động giao dịch và thông tin chuỗi khối.</p></div></div>
+      <div id="refresh-controls" class="refresh-controls" hidden>
+        <label for="refresh-interval">Tự động làm mới</label>
+        <select id="refresh-interval"><option value="0">Tắt</option><option value="5000">Mỗi 5 giây</option><option value="15000">Mỗi 15 giây</option><option value="30000">Mỗi 30 giây</option></select>
+        <span id="refresh-note" class="muted small">Chỉ làm mới thủ công.</span>
+      </div>
+      <div id="load-warning" class="notice warning" role="status" hidden></div>
+      <div id="view" aria-busy="true"><div class="empty-state" role="status">Đang tải giao diện…</div></div>
+      <noscript><p class="notice">Vui lòng bật JavaScript để sử dụng bản preview.</p></noscript>
+      <footer><span>CHAINROOM <span class="footer-dot">/</span> Blockchain learning workspace</span><span id="updated" role="status">Dữ liệu chỉ dùng để trình diễn UI</span></footer>
+    </main>
+  </div>
+  <dialog id="block-dialog" aria-labelledby="dialog-title"><div class="dialog-header"><div><span class="eyebrow">BLOCK EXPLORER</span><h2 id="dialog-title">Chi tiết block</h2></div><button id="close-dialog" class="button secondary" type="button" aria-label="Đóng chi tiết block">✕</button></div><div id="dialog-body"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

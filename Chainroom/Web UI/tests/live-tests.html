@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><title>M6 LIVE checks</title>
+<h1 id="result">Đang kiểm tra backend thật…</h1><iframe id="app" width="1200" height="850"></iframe>
+<script type="module">
+const frame = document.querySelector('#app');
+const check = (value, message) => { if (!value) throw Error(message); };
+const json = async path => (await fetch(path)).json();
+const wait = async predicate => {
+  for (let i = 0; i < 500; i++) {
+    if (predicate()) return;
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  throw Error('Hết thời gian chờ UI');
+};
+let doc;
+async function page(name) {
+  if (!doc) {
+    // URL cố chọn mock vẫn phải chạy LIVE trên Flask.
+    frame.src = `/ui/?mode=mock&scenario=offline#${name}`;
+    await new Promise(resolve => frame.onload = resolve);
+    doc = frame.contentDocument;
+  } else {
+    frame.contentWindow.location.hash = name;
+    await new Promise(resolve => setTimeout(resolve, 80));
+  }
+  await wait(() => doc.querySelector('#view')?.getAttribute('aria-busy') === 'false'
+    && doc.querySelector(`[data-page="${name}"]`)?.getAttribute('aria-current') === 'page');
+  check(!doc.querySelector('#view [role="alert"]'), 'UI báo lỗi đọc API');
+}
+function fill(name, value) {
+  const input = doc.getElementById(name);
+  input.value = value;
+  input.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+}
+try {
+  if (new URLSearchParams(location.search).get('action') === 'write') {
+    await page('transactions');
+    fill('sender', 'M6-Alice'); fill('receiver', 'M6-Bob'); fill('amount', '0');
+    doc.querySelector('#transaction-form').requestSubmit();
+    check(doc.querySelector('#transaction-result [role="alert"]'), 'Form phải chặn amount 0');
+    check((await json('/api/pending')).count === 0, 'Form sai không được thêm pending');
+    fill('amount', '7.5'); doc.querySelector('#transaction-form').requestSubmit();
+    await wait(() => doc.querySelector('#transaction-result .success-notice')
+      && doc.querySelector('#view').getAttribute('aria-busy') === 'false');
+    const pending = await json('/api/pending');
+    check(pending.count === 1 && pending.pending[0].amount === 7.5, 'POST giao dịch thật');
+    check(doc.querySelector('#transaction-result').textContent.includes(pending.pending[0].id), 'ID phải từ backend');
+    await page('mempool');
+    check(doc.querySelector('#view').textContent.includes('M6-Alice'), 'Mempool thật');
+    await page('mining'); fill('miner-address', 'M6-Miner-A');
+    doc.querySelector('#mining-form').requestSubmit();
+    await wait(() => doc.querySelector('#mining-result .success-notice')
+      && doc.querySelector('#view').getAttribute('aria-busy') === 'false');
+    const chain = await json('/api/chain');
+    check(chain.length === 2 && chain.chain[1].hash.startsWith('00'), 'PoW thật');
+    check(doc.querySelector('#mining-result').textContent.includes(chain.chain[1].hash), 'Kết quả mine từ backend');
+    await page('wallet'); fill('balance-address', 'M6-Miner-A');
+    doc.querySelector('#balance-form').requestSubmit();
+    await wait(() => doc.querySelector('#balance-form').getAttribute('aria-busy') === 'false');
+    check(doc.querySelector('.balance-summary .stat-value').textContent === '100', 'Tiền khả dụng từ API thật');
+  }
+  const chain = await json('/api/chain');
+  const pending = await json('/api/pending');
+  const peers = await json('/api/peers');
+  await page('dashboard');
+  check(doc.querySelector('.topbar-actions > .badge').textContent === 'LIVE', 'Server bắt buộc LIVE');
+  check(!doc.querySelector('.scenario-control'), 'Không có bộ chọn mock');
+  check(doc.querySelector('.node-identity strong').textContent === `Node ${chain.node}`, 'Đúng node');
+  const stats = [...doc.querySelectorAll('.stat-value')].map(item => item.textContent);
+  check(stats.join('|') === [chain.node, chain.length, chain.length - 1, pending.count].join('|'), 'Số liệu riêng của node');
+  doc.querySelector('.feature-block > button.primary').click();
+  check(doc.querySelector('#dialog-body').textContent.includes(chain.chain.at(-1).hash), 'Hash riêng của node');
+  doc.querySelector('#close-dialog').click();
+  await page('blockchain');
+  check(doc.querySelectorAll('#view tbody tr').length === chain.length, 'Không ghép chain từ peer');
+  await page('mempool');
+  check(doc.querySelectorAll('#view tbody tr').length === pending.count, 'Pending riêng của node');
+  await page('network');
+  const addresses = [...doc.querySelectorAll('.peer-address')].map(item => item.textContent);
+  check(JSON.stringify(addresses) === JSON.stringify([location.origin, ...peers.peers]), 'Danh sách peer từ API');
+  check([...doc.querySelectorAll('.peer-card')].slice(1).every(card => card.textContent.includes('Đang kết nối') && card.textContent.includes('Kiểm tra lúc')), 'Peer identity và kết nối từ API');
+  document.querySelector('#result').textContent = `PASS Node ${chain.node}: ${chain.length} blocks, ${pending.count} pending, ${peers.peers.length} peers`;
+  document.body.dataset.testResult = 'pass';
+} catch (error) {
+  document.querySelector('#result').textContent = `FAIL: ${error.stack}`;
+  document.body.dataset.testResult = 'fail';
+}
+</script></html>
